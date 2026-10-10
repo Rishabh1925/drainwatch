@@ -1,0 +1,10 @@
+{
+  "description": "Monitors municipal drains using AI to detect blockages and flood risks, providing real-time alerts and dispatch tools for urban infrastructure teams.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

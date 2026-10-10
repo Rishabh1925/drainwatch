@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+
+# Environment
+.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# macOS
+.DS_Store
+
+# Docker build context
+.dockerignore
+
+# IDE
+.claude/
+.agents/
+
+# Data (local dev only)
+data/local_store/
+data/
+checkpoints/

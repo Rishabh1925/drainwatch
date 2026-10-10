@@ -1,0 +1,72 @@
+{
+  "family": "drainwatch",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "3072",
+  "executionRoleArn": "arn:aws:iam::328996809086:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::328996809086:role/drainwatchTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "drainwatch",
+      "image": "328996809086.dkr.ecr.ap-southeast-2.amazonaws.com/drainwatch:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "ap-southeast-2"
+        },
+        {
+          "name": "DRAINWATCH_BUCKET",
+          "value": "drainwatch-media-prod"
+        },
+        {
+          "name": "DRAINWATCH_MEDIA_BASE",
+          "value": "https://drainwatch-media-prod.s3.ap-southeast-2.amazonaws.com"
+        },
+        {
+          "name": "DRAINWATCH_TABLE",
+          "value": "drainwatch-readings"
+        },
+        {
+          "name": "PORT",
+          "value": "8080"
+        },
+        {
+          "name": "SUPABASE_KEY",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieHdkZWh4aXRraXpwZXlpaHRnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTU3MDczNCwiZXhwIjoyMTA3MTQ2NzM0fQ.eTHWXGyAC5Un-SI-4ghF-ZMG-ot7QQqjwqXKfu3qQs0"
+        },
+        {
+          "name": "SUPABASE_URL",
+          "value": "https://xbxwdehxitkizpeyihtg.supabase.co"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/drainwatch",
+          "awslogs-region": "ap-southeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "essential": true,
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health').read()\" || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 120
+      }
+    }
+  ]
+}

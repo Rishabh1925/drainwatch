@@ -1,0 +1,63 @@
+[project]
+name = "drainwatch"
+version = "0.1.0"
+description = "Open drain choke-point detection via semantic segmentation"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pillow>=10.2",
+]
+
+[project.optional-dependencies]
+# Training / data prep — heavy, local only (never goes in the API container).
+train = [
+    "torch>=2.5",
+    "transformers>=4.44",
+    # Pinned at 2.x, and the augmentation pipeline is written against that API.
+    # albumentations 2.0 renamed arguments this project uses, and they are TypeErrors
+    # rather than warnings: ImageCompression quality_lower/quality_upper -> quality_range,
+    # ShiftScaleRotate(mask_value=) -> Affine(fill_mask=). Allowing 1.x back in would
+    # break data/dataset.py, so the floor matters as much as any ceiling.
+    "albumentations>=2.0,<3.0",
+    "requests>=2.31",
+    "tqdm>=4.66",
+    "matplotlib>=3.8",
+]
+# Inference service — installs CPU-only torch in the Dockerfile, see docker/Dockerfile.
+api = [
+    "torch>=2.5",
+    "transformers>=4.44",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "boto3>=1.34",
+    "requests>=2.31",
+    "supabase>=2.0",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+drainwatch = "drainwatch.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/drainwatch"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# src on the path without an editable install: the core suites need only numpy and
+# pillow, so they must stay runnable before (or without) the torch install.
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

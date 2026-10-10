@@ -1,0 +1,21 @@
+[taco] annotations...
+[taco] images...
+[taco] 1500 fetched, 0 already present
+[uavvaste] annotations...
+[uavvaste] images...
+[uavvaste] 88 fetched, 0 already present, 684 FAILED
+[uavvaste] WARNING: 89% of images failed to download (684/772). Dead upstream links are the usual cause. Check `data build` class counts before training — if `waste` is thin, lean harder on UAVVaste or add a fallback source.
+[ade] downloading (~1 GB)...
+[ade] extracting...
+1591 fetched, 0 already present, 684 FAILED
+  FAIL uavvaste/BATCH_d07_img_6740.jpg: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/BATCH_d07_img_720.jpg: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/BATCH_d07_img_1330.jpg: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/BATCH_d07_img_5710.jpg: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/GOPR0038.JPG: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/GOPR0040.JPG: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/GOPR0032.JPG: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/GOPR0028.JPG: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/BATCH_s05_img_1260.jpg: HTTP Error 429: Too Many Requests
+  FAIL uavvaste/GOPR0035.JPG: HTTP Error 429: Too Many Requests
+  ... and 674 more

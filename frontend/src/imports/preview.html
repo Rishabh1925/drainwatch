@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DrainWatch — design preview</title>
+<meta name="description" content="Static preview of the DrainWatch 'Gauge Station' dashboard design." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* Mirrors web/src/styles.css tokens — this is a no-build preview of the same design. */
+:root{
+  --abyss:#070B14; --deep:#0A1020; --panel:#0E1627; --panel-2:#141F38;
+  --line:#203049; --line-2:#2C3F5E; --text:#E8EFFB; --text-dim:#B6C3DB; --muted:#7486A6;
+  --water:#3BC9E6; --ok:#2FDFB4; --watch:#FFB224; --crit:#FF2E79;
+  --font-display:'Space Grotesk',system-ui,sans-serif; --font-body:'Inter',system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;} html,body{margin:0;height:100%;}
+body{
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(59,201,230,0.08), transparent 60%),
+    radial-gradient(900px 500px at -5% 110%, rgba(255,46,121,0.06), transparent 55%),
+    var(--abyss);
+  color:var(--text); font:15px/1.6 var(--font-body); -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
+.wrap{max-width:1080px; margin:0 auto; padding:0 28px;}
+
+/* top strip */
+.strip{display:flex; align-items:center; gap:26px; padding:16px 28px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,rgba(20,31,56,0.5),transparent);}
+.brand{display:flex; align-items:center; gap:13px;}
+.brand-gauge{position:relative; width:14px; height:34px; border-radius:4px; background:linear-gradient(180deg,#0c1322,#182a49); border:1px solid var(--line-2); overflow:hidden;}
+.brand-gauge::before{content:''; position:absolute; inset:auto 0 0 0; height:58%; background:linear-gradient(180deg,var(--water),#1f8fb0); box-shadow:0 0 10px rgba(59,201,230,.6);}
+.brand-gauge::after{content:''; position:absolute; left:0; right:0; bottom:70%; height:1px; background:var(--crit);}
+.brand h1{font-family:var(--font-display); font-size:19px; margin:0;}
+.brand .tag{font-family:var(--font-mono); font-size:11px; color:var(--muted); margin:1px 0 0; letter-spacing:.02em;}
+.readouts{display:flex; gap:10px; margin-left:auto;}
+.cell{display:flex; align-items:center; gap:9px; padding:7px 13px; background:var(--panel); border:1px solid var(--line); border-radius:10px;}
+.cell.rising{border-color:rgba(255,46,121,.35); background:rgba(255,46,121,.06);}
+.cell .dot{width:8px; height:8px; border-radius:50%; box-shadow:0 0 9px currentColor;}
+.cell .num{font-family:var(--font-mono); font-size:20px; line-height:1;}
+.cell .lab{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em; margin-top:3px;}
+.cell .stk{display:flex; flex-direction:column;}
+
+/* hero */
+.hero{display:grid; grid-template-columns:1fr 340px; gap:40px; align-items:center; padding:72px 0 56px;}
+.hero .eyebrow{font-family:var(--font-mono); font-size:12px; letter-spacing:.16em; color:var(--water); text-transform:uppercase; margin:0 0 20px;}
+.hero h2{font-family:var(--font-display); font-weight:600; font-size:52px; line-height:1.04; letter-spacing:-0.02em; margin:0;}
+.hero h2 em{font-style:normal; color:var(--water);}
+.hero p{color:var(--text-dim); font-size:17px; max-width:48ch; margin:22px 0 0;}
+.hero .formula{font-family:var(--font-mono); font-size:13px; color:var(--muted); margin-top:26px; padding:14px 16px; background:var(--panel); border:1px solid var(--line); border-left:2px solid var(--water); border-radius:8px; max-width:40ch;}
+.hero .formula b{color:var(--text);}
+.hero-gauge{display:flex; flex-direction:column; align-items:center; gap:14px; padding:26px; background:linear-gradient(180deg,var(--panel),var(--deep)); border:1px solid var(--line-2); border-radius:16px; box-shadow:0 30px 80px -40px #000;}
+.hero-gauge .val{font-family:var(--font-mono); font-size:52px; line-height:1; color:var(--crit);}
+.hero-gauge .sev{font-family:var(--font-display); font-weight:600; text-transform:uppercase; letter-spacing:.12em; font-size:13px; color:var(--crit);}
+.hero-gauge .cap{font-size:12px; color:var(--muted); text-align:center; max-width:24ch;}
+
+/* progression */
+.section-label{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; gap:12px; margin:0 0 26px;}
+.section-label::after{content:''; flex:1; height:1px; background:var(--line);}
+.progression{padding:40px 0 64px; border-top:1px solid var(--line);}
+.weeks{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+.week{display:flex; flex-direction:column; align-items:center; gap:12px; padding:22px 10px; background:var(--panel); border:1px solid var(--line); border-radius:14px;}
+.week.crit{border-color:rgba(255,46,121,.4); background:linear-gradient(180deg,rgba(255,46,121,.07),var(--panel));}
+.week .wk{font-family:var(--font-mono); font-size:11px; color:var(--muted); letter-spacing:.05em;}
+.week .val{font-family:var(--font-mono); font-size:26px; line-height:1;}
+.week .sev{font-family:var(--font-display); font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:.1em;}
+.arrow-note{text-align:center; margin-top:26px; color:var(--text-dim); font-size:14px;}
+.arrow-note b{color:var(--crit); font-family:var(--font-display);}
+
+/* detail card */
+.panels{display:grid; grid-template-columns:1fr 300px; gap:22px; padding:0 0 72px;}
+.card{background:linear-gradient(180deg,var(--panel),var(--deep)); border:1px solid var(--line-2); border-radius:14px; padding:20px;}
+.card h3{font-family:var(--font-display); margin:0; font-size:16px;}
+.card .coord{font-family:var(--font-mono); font-size:11px; color:var(--muted); margin:3px 0 0;}
+.metrics{display:grid; grid-template-columns:1fr 1fr; gap:1px; margin-top:18px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+.metric{background:var(--panel); padding:11px 12px;}
+.metric dt{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin:0;}
+.metric dd{font-family:var(--font-mono); font-size:15px; margin:4px 0 0;}
+.detail-gauge{display:flex; flex-direction:column; align-items:center; gap:12px;}
+.detail-gauge .val{font-family:var(--font-mono); font-size:40px; line-height:1; color:var(--crit);}
+.detail-gauge .sev{font-family:var(--font-display); font-weight:600; text-transform:uppercase; letter-spacing:.11em; font-size:12px; color:var(--crit);}
+.detail-gauge .act{font-size:11px; color:var(--muted);}
+.legend{display:flex; gap:14px; margin-top:12px; font-size:11px; color:var(--muted);}
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:3px;}
+
+.foot{border-top:1px solid var(--line); padding:26px 0 60px; color:var(--muted); font-size:12px; line-height:1.7;}
+.foot code{font-family:var(--font-mono); color:var(--text-dim); background:var(--panel-2); padding:1px 6px; border-radius:4px;}
+
+@media (max-width:860px){ .hero{grid-template-columns:1fr; } .hero-gauge{order:-1; max-width:300px;} .panels{grid-template-columns:1fr;} .weeks{grid-template-columns:repeat(2,1fr);} .hero h2{font-size:40px;} .readouts .cell .lab{display:none;} }
+@media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+</style>
+</head>
+<body>
+<div class="strip">
+  <div class="brand">
+    <span class="brand-gauge"></span>
+    <div><h1>DrainWatch</h1><p class="tag">CHOKE-POINT MONITOR · DELHI PILOT</p></div>
+  </div>
+  <div class="readouts">
+    <div class="cell"><span class="dot" style="background:var(--crit);color:var(--crit)"></span><span class="stk"><span class="num" style="color:var(--crit)">3</span><span class="lab">Critical</span></span></div>
+    <div class="cell"><span class="dot" style="background:var(--watch);color:var(--watch)"></span><span class="stk"><span class="num" style="color:var(--watch)">7</span><span class="lab">Watch</span></span></div>
+    <div class="cell"><span class="dot" style="background:var(--ok);color:var(--ok)"></span><span class="stk"><span class="num" style="color:var(--ok)">12</span><span class="lab">Clear</span></span></div>
+    <div class="cell rising"><span class="dot" style="background:var(--crit);color:var(--crit)"></span><span class="stk"><span class="num" style="color:var(--crit)">4</span><span class="lab">Rising</span></span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Heat &amp; Water · Monsoon waterlogging</p>
+      <h2>Delhi's drains don't fail suddenly.<br/>They <em>fill</em>.</h2>
+      <p>A drain silts up over weeks — a bag, then silt, then the channel narrows — and nobody notices until a cloudburst puts a metre of water across the road. DrainWatch reads the drain from the outside and watches its <b>choke index</b> climb toward the flood line, so the crew is sent before it blocks, not after.</p>
+      <div class="formula">channel = waste + water<br/><b>choke index = waste / channel</b> &nbsp;∈ [0, 1]<br/><span style="color:var(--crit)">≥ 0.70 → dispatch a crew</span></div>
+    </div>
+    <div class="hero-gauge">
+      <div data-gauge="0.79" data-color="#FF2E79" data-big="1"></div>
+      <div class="val" data-countup="0.79">0.00</div>
+      <div class="sev">Critical</div>
+      <div class="cap">Bawana Road culvert — the surface has crossed the dispatch line</div>
+    </div>
+  </section>
+
+  <section class="progression">
+    <p class="section-label">One drain · four weekly readings</p>
+    <div class="weeks">
+      <div class="week"><span class="wk">WEEK 1</span><div data-gauge="0.18" data-color="#2FDFB4"></div><span class="val" style="color:var(--ok)">0.18</span><span class="sev" style="color:var(--ok)">Clear</span></div>
+      <div class="week"><span class="wk">WEEK 2</span><div data-gauge="0.37" data-color="#FFB224"></div><span class="val" style="color:var(--watch)">0.37</span><span class="sev" style="color:var(--watch)">Watch</span></div>
+      <div class="week"><span class="wk">WEEK 3</span><div data-gauge="0.58" data-color="#FFB224"></div><span class="val" style="color:var(--watch)">0.58</span><span class="sev" style="color:var(--watch)">Watch</span></div>
+      <div class="week crit"><span class="wk">WEEK 4</span><div data-gauge="0.79" data-color="#FF2E79"></div><span class="val" style="color:var(--crit)">0.79</span><span class="sev" style="color:var(--crit)">Critical</span></div>
+    </div>
+    <p class="arrow-note">Dispatch happens at week 3 — <b>before the flood</b>, not after. That is the whole difference between predictive and reactive.</p>
+  </section>
+
+  <section>
+    <p class="section-label">Reading detail</p>
+    <div class="panels">
+      <div class="card">
+        <h3>Bawana Road culvert</h3>
+        <p class="coord">28.75010, 77.11770 · d_28.7501_77.1177</p>
+        <dl class="metrics">
+          <div class="metric"><dt>Waste px</dt><dd>184,210</dd></div>
+          <div class="metric"><dt>Water px</dt><dd>49,002</dd></div>
+          <div class="metric"><dt>Channel px</dt><dd>233,212</dd></div>
+          <div class="metric"><dt>Confidence</dt><dd>88%</dd></div>
+        </dl>
+        <div class="legend"><span><i style="background:#0096FF"></i> water</span><span><i style="background:#FF006E"></i> waste</span></div>
+      </div>
+      <div class="card detail-gauge">
+        <div data-gauge="0.79" data-color="#FF2E79" data-big="1"></div>
+        <div class="val" data-countup="0.79">0.00</div>
+        <div class="sev">Critical</div>
+        <div class="act">Dispatch a crew</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Static preview of the DrainWatch dashboard design — the <b style="color:var(--text-dim)">Gauge Station</b> direction.
+    The live app under <code>web/</code> wires these components (staff gauge, watch list, tide chart, segmentation overlay)
+    to the FastAPI backend: <code>/drains</code>, <code>/analyze</code>, <code>/drains/{id}/history</code>.
+    Run it with <code>npm install &amp;&amp; npm run dev</code> after training frees the CPU.
+  </footer>
+</div>
+
+<script>
+const CRIT = 0.70, WATCHL = 0.40;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function wavePath(width, amp, baseY, bottom){
+  const span = width*2, steps = Math.max(12, Math.round(span/4));
+  let d = `M 0 ${bottom.toFixed(1)}`;
+  for(let i=0;i<=steps;i++){ const x=(i/steps)*span; const y=baseY+amp*Math.sin((x/width)*Math.PI*2); d+=` L ${x.toFixed(1)} ${y.toFixed(1)}`; }
+  return `${d} L ${span.toFixed(1)} ${bottom.toFixed(1)} Z`;
+}
+
+function gaugeSVG(value, color, big){
+  const width = big ? 108 : 42, height = big ? 236 : 104, showScale = !!big;
+  const uid = 'g'+Math.random().toString(36).slice(2,8);
+  const lvl = Math.max(0, Math.min(1, value));
+  const tubeX=1, tubeY=8, tubeW = showScale ? 54 : width-2, tubeH = height-16, rx = Math.min(10, tubeW/4);
+  const yFor = f => tubeY + (1-f)*tubeH;
+  const waterTop = yFor(lvl), floodY = yFor(CRIT), bottom = tubeY+tubeH, amp = Math.max(1.4, tubeW*0.05);
+  const rise = reduce ? 0 : (bottom - waterTop);
+  const aboveFlood = lvl >= CRIT;
+  const ripple = !reduce && lvl > 0.001;
+
+  const riseAnim = reduce ? '' :
+    `<animateTransform attributeName="transform" type="translate" values="0 ${rise.toFixed(1)};0 0" keyTimes="0;1" keySplines="0.22 1 0.36 1" calcMode="spline" dur="1.15s" begin="0.15s" fill="freeze"/>`;
+  const wA = ripple ? `<animateTransform attributeName="transform" type="translate" from="0 0" to="${-tubeW} 0" dur="2.9s" repeatCount="indefinite"/>` : '';
+  const wB = ripple ? `<animateTransform attributeName="transform" type="translate" from="0 0" to="${-tubeW} 0" dur="4.2s" repeatCount="indefinite"/>` : '';
+
+  const scale = showScale ? `
+    ${[0.2,0.4,0.6,0.8].map(f=>`<line x1="${tubeX+tubeW-7}" y1="${yFor(f)}" x2="${tubeX+tubeW-1}" y2="${yFor(f)}" stroke="#2C3F5E" stroke-width="1"/>`).join('')}
+    <line x1="${tubeX}" y1="${yFor(WATCHL)}" x2="${tubeX+tubeW}" y2="${yFor(WATCHL)}" stroke="#FFB224" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>
+    <text x="${tubeX+tubeW+8}" y="${yFor(WATCHL)+3}" fill="#FFB224" font-size="9" font-family="'IBM Plex Mono',monospace" opacity="0.85">0.40</text>
+    <text x="${tubeX+tubeW+8}" y="${floodY-3}" fill="#FF2E79" font-size="10" font-family="'IBM Plex Mono',monospace">0.70</text>
+    <text x="${tubeX+tubeW+8}" y="${floodY+8}" fill="#7486A6" font-size="8" font-family="'IBM Plex Mono',monospace" letter-spacing="0.05em">DISPATCH</text>` : '';
+
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="choke index ${value}">
+    <defs>
+      <clipPath id="${uid}c"><rect x="${tubeX}" y="${tubeY}" width="${tubeW}" height="${tubeH}" rx="${rx}"/></clipPath>
+      <linearGradient id="${uid}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.95"/><stop offset="1" stop-color="${color}" stop-opacity="0.55"/></linearGradient>
+    </defs>
+    <rect x="${tubeX}" y="${tubeY}" width="${tubeW}" height="${tubeH}" rx="${rx}" fill="#0A1322" stroke="#2C3F5E" stroke-width="1"/>
+    <g clip-path="url(#${uid}c)">
+      <g transform="translate(0 ${rise.toFixed(1)})">${riseAnim}
+        <g transform="translate(${tubeX} 0)">
+          <g opacity="0.45"><g>${wB}<path d="${wavePath(tubeW, amp*0.7, waterTop+1.5, bottom+40)}" fill="${color}" opacity="0.5"/></g></g>
+          <g>${wA}<path d="${wavePath(tubeW, amp, waterTop, bottom+40)}" fill="url(#${uid}w)"/></g>
+        </g>
+      </g>
+      <rect x="${tubeX}" y="${(waterTop-0.5).toFixed(1)}" width="${tubeW}" height="1.5" fill="${color}" opacity="0.9"/>
+    </g>
+    <line x1="${tubeX}" y1="${floodY}" x2="${tubeX+tubeW}" y2="${floodY}" stroke="#FF2E79" stroke-width="1.4" stroke-dasharray="4 3" ${aboveFlood?'style="filter:drop-shadow(0 0 4px rgba(255,46,121,0.9))"':''}/>
+    ${scale}
+  </svg>`;
+}
+
+document.querySelectorAll('[data-gauge]').forEach(el=>{
+  el.innerHTML = gaugeSVG(parseFloat(el.dataset.gauge), el.dataset.color || '#3BC9E6', el.dataset.big === '1');
+});
+
+// count-up on the big readouts — a small telemetry flourish
+document.querySelectorAll('[data-countup]').forEach(el=>{
+  const target = parseFloat(el.dataset.countup);
+  if (reduce){ el.textContent = target.toFixed(2); return; }
+  const start = performance.now(), dur = 1200;
+  function tick(now){
+    const t = Math.min(1, (now-start)/dur);
+    const eased = 1 - Math.pow(1-t, 3);
+    el.textContent = (target*eased).toFixed(2);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  setTimeout(()=>requestAnimationFrame(tick), 250);
+});
+</script>
+</body>
+</html>
