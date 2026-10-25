@@ -87,6 +87,7 @@ def segmenter(api, monkeypatch):
 
     monkeypatch.setattr("drainwatch.model.segformer.predict", fake_predict)
     monkeypatch.setitem(api.STATE, "model", object())  # any non-None sentinel
+    monkeypatch.setitem(api.STATE, "model_trained", True)
     return fake_predict
 
 

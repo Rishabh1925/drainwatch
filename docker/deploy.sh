@@ -41,13 +41,11 @@ echo "  ✓ Logged in"
 echo ""
 echo "▶ Step 3: Build & Push (this takes 5-10 min on first run)"
 docker build \
-  -f docker/Dockerfile \
-  -t ${ECR_URI}:latest \
-  . && docker push ${ECR_URI}:latest
   --platform linux/amd64 \
   -f docker/Dockerfile \
   -t ${ECR_URI}:latest \
-  --push .
+  .
+docker push ${ECR_URI}:latest
 echo "  ✓ Image pushed to ECR"
 
 # ─── Step 4: Create CloudWatch Log Group ────────────────────────

@@ -1,0 +1,165 @@
+{
+  "config": {
+    "epochs": 12,
+    "batch_size": 4,
+    "lr": 6e-05,
+    "weight_decay": 0.01,
+    "image_size": 512,
+    "num_workers": 2,
+    "patience": 6,
+    "seed": 42,
+    "poly_power": 1.0
+  },
+  "device": "cpu",
+  "train_samples": 3323,
+  "val_samples": 586,
+  "best_epoch": 12,
+  "best_score": 0.693,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.5322,
+      "miou": 0.6527,
+      "score": 0.5472,
+      "iou": {
+        "structure": 0.8635,
+        "water": 0.5719,
+        "waste": 0.5226
+      },
+      "seconds": 2875.9
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.3417,
+      "miou": 0.6867,
+      "score": 0.5858,
+      "iou": {
+        "structure": 0.8886,
+        "water": 0.6585,
+        "waste": 0.5131
+      },
+      "seconds": 2855.9
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.3088,
+      "miou": 0.718,
+      "score": 0.6286,
+      "iou": {
+        "structure": 0.8969,
+        "water": 0.6397,
+        "waste": 0.6174
+      },
+      "seconds": 2839.9
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.2721,
+      "miou": 0.7033,
+      "score": 0.609,
+      "iou": {
+        "structure": 0.892,
+        "water": 0.6522,
+        "waste": 0.5658
+      },
+      "seconds": 2819.0
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.2521,
+      "miou": 0.6831,
+      "score": 0.5799,
+      "iou": {
+        "structure": 0.8896,
+        "water": 0.6401,
+        "waste": 0.5198
+      },
+      "seconds": 2819.5
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.2438,
+      "miou": 0.735,
+      "score": 0.6492,
+      "iou": {
+        "structure": 0.9065,
+        "water": 0.6641,
+        "waste": 0.6342
+      },
+      "seconds": 2829.6
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.2247,
+      "miou": 0.7347,
+      "score": 0.6481,
+      "iou": {
+        "structure": 0.9078,
+        "water": 0.6745,
+        "waste": 0.6217
+      },
+      "seconds": 2839.1
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.2029,
+      "miou": 0.7403,
+      "score": 0.6544,
+      "iou": {
+        "structure": 0.9122,
+        "water": 0.6973,
+        "waste": 0.6116
+      },
+      "seconds": 2717.5
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.2072,
+      "miou": 0.7381,
+      "score": 0.6513,
+      "iou": {
+        "structure": 0.9117,
+        "water": 0.6962,
+        "waste": 0.6064
+      },
+      "seconds": 2697.0
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.1945,
+      "miou": 0.7549,
+      "score": 0.6727,
+      "iou": {
+        "structure": 0.9192,
+        "water": 0.7052,
+        "waste": 0.6402
+      },
+      "seconds": 2764.4
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.1861,
+      "miou": 0.7597,
+      "score": 0.6788,
+      "iou": {
+        "structure": 0.9213,
+        "water": 0.7077,
+        "waste": 0.65
+      },
+      "seconds": 3025.6
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.1802,
+      "miou": 0.7704,
+      "score": 0.693,
+      "iou": {
+        "structure": 0.9252,
+        "water": 0.7146,
+        "waste": 0.6713
+      },
+      "seconds": 2956.2
+    }
+  ],
+  "checkpoint": "/Users/rishabh/Documents/Environmental Hacks/drainwatch/checkpoints/best"
+}

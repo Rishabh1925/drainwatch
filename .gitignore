@@ -27,4 +27,8 @@ frontend/dist/
 # Data (local dev only)
 data/local_store/
 data/
-checkpoints/
+
+# Model checkpoints (binary files, not tracked)
+checkpoints/**
+!checkpoints/best/.gitkeep
+!checkpoints/training_report.json

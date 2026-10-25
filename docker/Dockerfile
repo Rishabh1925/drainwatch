@@ -49,8 +49,10 @@ RUN pip install --no-cache-dir \
       "python-dotenv>=1.0" \
  && pip install --no-cache-dir --no-deps -e .
 
-# Trained weights baked into the image — no S3 pull at boot.
-COPY checkpoints/ ./checkpoints/
+# Trained checkpoint baked into the image when present.
+# checkpoints/best/ always exists (contains .gitkeep at minimum).
+# If no model.safetensors is found, the app starts but /analyze returns 503.
+COPY checkpoints/best/ ./checkpoints/best/
 
 # Built React app: main.py prefers frontend/dist over web/dist.
 COPY --from=frontend /frontend/dist ./frontend/dist

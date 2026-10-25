@@ -214,8 +214,8 @@ async def analyze(
     images have EXIF stripped, so the form override is the normal path for a demo, not a
     workaround.
     """
-    if STATE["model"] is None:
-        raise HTTPException(503, f"model unavailable: {STATE['error'] or 'not loaded'}")
+    if STATE["model"] is None or not STATE.get("model_trained", False):
+        raise HTTPException(503, f"model unavailable: {STATE['error'] or 'no trained checkpoint loaded'}")
 
     raw = await file.read()
     if not raw:
