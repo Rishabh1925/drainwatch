@@ -87,6 +87,17 @@ class AnalyzeResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
+    model_trained: bool = Field(
+        False,
+        description=(
+            "True only when the loaded model is from a trained checkpoint, "
+            "not a pretrained base with an untrained segmentation head."
+        ),
+    )
+    checkpoint: str = Field(
+        "none",
+        description="Path to the loaded checkpoint, or a status string (missing/invalid/error/none).",
+    )
     device: str
     storage: str
     thresholds: dict

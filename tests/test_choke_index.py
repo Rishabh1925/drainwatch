@@ -97,9 +97,18 @@ def test_min_channel_scales_with_frame_size():
     [
         (0.00, Severity.OK),
         (0.39, Severity.OK),
-        (0.40, Severity.WATCH),  # inclusive lower bound
+        (0.399, Severity.OK),       # immediately below watch
+        (0.3999, Severity.OK),      # sub-epsilon below watch
+        (0.40, Severity.WATCH),     # inclusive lower bound
+        (0.4001, Severity.WATCH),   # epsilon above watch
+        (0.401, Severity.WATCH),
+        (0.50, Severity.WATCH),
         (0.69, Severity.WATCH),
+        (0.699, Severity.WATCH),    # immediately below critical
+        (0.6999, Severity.WATCH),   # sub-epsilon below critical
         (0.70, Severity.CRITICAL),  # inclusive lower bound
+        (0.7001, Severity.CRITICAL),  # epsilon above critical
+        (0.701, Severity.CRITICAL),
         (1.00, Severity.CRITICAL),
     ],
 )

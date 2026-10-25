@@ -6,12 +6,12 @@
   ],
   "cpu": "1024",
   "memory": "3072",
-  "executionRoleArn": "arn:aws:iam::328996809086:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::328996809086:role/drainwatchTaskRole",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/drainwatchTaskRole",
   "containerDefinitions": [
     {
       "name": "drainwatch",
-      "image": "328996809086.dkr.ecr.ap-southeast-2.amazonaws.com/drainwatch:latest",
+      "image": "ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/drainwatch:latest",
       "portMappings": [
         {
           "containerPort": 8080,
@@ -40,12 +40,18 @@
           "value": "8080"
         },
         {
+          "name": "DRAINWATCH_COOKIE_SECURE",
+          "value": "1"
+        }
+      ],
+      "secrets": [
+        {
           "name": "SUPABASE_KEY",
-          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieHdkZWh4aXRraXpwZXlpaHRnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTU3MDczNCwiZXhwIjoyMTA3MTQ2NzM0fQ.eTHWXGyAC5Un-SI-4ghF-ZMG-ot7QQqjwqXKfu3qQs0"
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:ACCOUNT_ID:secret:drainwatch/supabase-key"
         },
         {
           "name": "SUPABASE_URL",
-          "value": "https://xbxwdehxitkizpeyihtg.supabase.co"
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:ACCOUNT_ID:secret:drainwatch/supabase-url"
         }
       ],
       "logConfiguration": {

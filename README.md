@@ -16,11 +16,45 @@ This repository contains the full production stack: the Python inference backend
 - [Backend API](#backend-api)
 - [Frontend Dashboard](#frontend-dashboard)
 - [Repository Structure](#repository-structure)
+- [Quick Start - Run Locally](#quick-start---run-locally)
 - [Local Development](#local-development)
 - [Deployment](#deployment)
 - [Environment Variables](#environment-variables)
 - [API Reference](#api-reference)
-- [Credentials and Access](#credentials-and-access)
+- [Initial Account Setup](#initial-account-setup)
+- [Model Checkpoint Setup](#model-checkpoint-setup)
+- [Security Considerations](#security-considerations)
+- [Evaluation Results and Limitations](#evaluation-results-and-limitations)
+- [Known Limitations](#known-limitations)
+
+---
+
+## Quick Start - Run Locally
+
+The fastest way to get DrainWatch running on your machine:
+
+**macOS / Linux** - double-click `run.sh` or:
+
+```bash
+git clone https://github.com/Rishabh1925/drainwatch.git
+cd drainwatch
+bash run.sh
+```
+
+**Windows** - double-click `run.bat` or:
+
+```cmd
+git clone https://github.com/Rishabh1925/drainwatch.git
+cd drainwatch
+run.bat
+```
+
+The script will:
+1. Create a Python virtual environment and install dependencies
+2. Build the React frontend (requires Node.js)
+3. Start the FastAPI server at **http://localhost:8000**
+
+> **Note:** For full inference, place a trained SegFormer checkpoint in `checkpoints/best/`. Without it, the dashboard loads but image analysis returns 503. See [Model Checkpoint Setup](#model-checkpoint-setup).
 
 ---
 
@@ -53,7 +87,8 @@ Camera Feed (Drone / CCTV)
         |
         +-- Auth Router
         |        |
-        |        +-- Supabase  (user accounts, roles, session cookies)
+        |        +-- PBKDF2 password hashing + HTTP-only session cookies
+        |        +-- Supabase PostgreSQL  (user and session persistence)
         |
         +-- REST API  (served to React dashboard)
         |
@@ -82,7 +117,7 @@ The entire backend and frontend are packaged into a single Docker image and run 
 | Deep learning | PyTorch 2.6 (CPU) |
 | Image processing | Pillow |
 | Segmentation scoring | Custom Choke Index algorithm |
-| Authentication | Supabase (PostgreSQL-backed) |
+| Authentication | PBKDF2-HMAC-SHA256 + session cookies (stored in Supabase PostgreSQL) |
 | Package management | uv / pyproject.toml |
 | Python version | 3.12 |
 
@@ -105,7 +140,7 @@ The entire backend and frontend are packaged into a single Docker image and run 
 | Container registry | Amazon ECR |
 | Image storage | Amazon S3 |
 | Telemetry database | Amazon DynamoDB |
-| User management | Supabase (Auth) |
+| User management | Supabase (PostgreSQL data store) |
 | Logging | Amazon CloudWatch Logs |
 | IAM | Custom task execution and task roles |
 
@@ -125,7 +160,7 @@ The container runs as a Fargate task with 1 vCPU and 3 GB of memory. ECS manages
 
 **Amazon S3**
 
-All visual output from the ML pipeline is stored in the `drainwatch-media-prod` bucket. For each analysis, two objects are written: the original source frame uploaded by the operator, and the AI-generated segmentation overlay. Objects are publicly readable so the dashboard can render them directly.
+All visual output from the ML pipeline is stored in the `drainwatch-media-prod` bucket. For each analysis, two objects are written: the original source frame uploaded by the operator, and the AI-generated segmentation overlay. When `DRAINWATCH_MEDIA_BASE` is not set, objects are served via presigned URLs (private bucket). When set, the dashboard renders images directly from the configured base URL.
 
 **Amazon DynamoDB**
 
@@ -200,15 +235,15 @@ Returns aggregated drain health data for the dashboard. Includes all readings, p
 
 **Auth** (`/api/auth`)
 
-Login, logout, current user, and user management endpoints. Sessions are maintained via HTTP-only cookies. Passwords are stored and validated through Supabase.
+Login, logout, current user, and user management endpoints. Sessions are maintained via HTTP-only cookies. Passwords are hashed with PBKDF2-HMAC-SHA256 with per-user random salts. User records are stored in Supabase PostgreSQL.
 
 **Admin** (`/api/admin`)
 
-User creation, role assignment, and monitoring source registration. Restricted to users with the ADMIN role.
+User creation, role assignment, and monitoring source registration. Restricted to users with the ADMIN role. Authorization is enforced server-side, not just in the UI.
 
 **Health** (`/health`)
 
-Returns a JSON object indicating whether the model loaded successfully, which device it is running on, and which storage backend is active. Used by ECS health checks.
+Returns a JSON object indicating whether the model loaded successfully, whether it is from a trained checkpoint, which device it is running on, and which storage backend is active. Used by ECS health checks. The `model_trained` field distinguishes a properly loaded trained checkpoint from other states.
 
 ---
 
@@ -277,6 +312,7 @@ drainwatch/
 |
 +-- checkpoints/
 |   +-- best/                    Trained SegFormer checkpoint (model.safetensors + config.json)
+|   +-- training_report.json     Per-epoch training history and best metrics
 |
 +-- data/
 |   +-- local_store/             Local filesystem fallback for images and readings
@@ -407,31 +443,52 @@ The storage backend selection is automatic. If `DRAINWATCH_BUCKET` and `DRAINWAT
 
 **POST /api/analyze**
 
-Accepts a multipart form with one image file and an optional `drain_id` string. Returns:
+Accepts a multipart form with an image file (`image`), `source_id`, `asset_id`, and optional `captured_at`. Requires authentication. Returns the inspection record with blockage analysis.
+
+The Choke Index is computed as `waste_px / (waste_px + water_px)` and reported as `blockage_percentage` (0-100 scale). Severity bands:
+
+| Band | Choke Index | Action |
+|------|-------------|--------|
+| `normal` | Below 0.40 (40%) | No action |
+| `warning` | 0.40 to below 0.70 | Schedule inspection |
+| `critical` | 0.70 or above (70%) | Dispatch crew immediately |
+
+**POST /analyze** (legacy)
+
+Accepts a multipart form with one image file and optional `lat`, `lon`, `captured_at`. Returns:
 
 ```json
 {
-  "drain_id": "D-1042",
-  "choke_index": 0.784,
-  "band": "critical",
-  "class_breakdown": {
-    "water": 0.12,
-    "debris": 0.78,
-    "background": 0.10
+  "reading": {
+    "reading_id": "a1b2c3d4e5f6",
+    "drain_id": "d_28.7604_77.1035",
+    "choke_index": 0.50,
+    "severity": "watch",
+    "waste_px": 5000,
+    "water_px": 5000,
+    "channel_px": 10000,
+    "total_px": 20000,
+    "confidence": 0.90,
+    "image_url": "/media/readings/.../source.jpg",
+    "overlay_url": "/media/readings/.../overlay.png"
   },
-  "source_url": "https://drainwatch-media-prod.s3.ap-southeast-2.amazonaws.com/...",
-  "overlay_url": "https://drainwatch-media-prod.s3.ap-southeast-2.amazonaws.com/...",
-  "timestamp": "2026-10-10T06:00:00Z"
+  "drain": {
+    "drain_id": "d_28.7604_77.1035",
+    "latest": { "..." : "..." },
+    "reading_count": 1,
+    "trend": null,
+    "history": [0.50]
+  }
 }
 ```
 
 **POST /api/auth/login**
 
 ```json
-{ "email": "operator@drainwatch.in", "password": "operator123" }
+{ "email": "your-email@example.com", "password": "your-password" }
 ```
 
-Sets an HTTP-only session cookie (`dw_session`) on success. Returns the user object.
+Sets an HTTP-only session cookie (`dw_session`) on success. Returns the user object (never includes password material).
 
 **GET /health**
 
@@ -439,6 +496,8 @@ Sets an HTTP-only session cookie (`dw_session`) on success. Returns the user obj
 {
   "status": "ok",
   "model_loaded": true,
+  "model_trained": true,
+  "checkpoint": "checkpoints/best",
   "device": "cpu",
   "storage": "aws",
   "thresholds": {
@@ -453,13 +512,79 @@ Sets an HTTP-only session cookie (`dw_session`) on success. Returns the user obj
 
 ---
 
-## Credentials and Access
+## Initial Account Setup
 
-The system ships with two pre-seeded accounts. These are stored in Supabase and work against both the locally running API and the AWS deployment.
+The system does not ship with default credentials. To create the initial administrator account:
 
-| Role | Email | Password | Access |
-|------|-------|----------|--------|
-| Admin | `admin@drainwatch.in` | `admin123` | Full access including Administration page |
-| Operator | `operator@drainwatch.in` | `operator123` | Inspections, Dispatch, Incidents, Map |
+1. Run the seed script, which prompts for credentials:
+   ```bash
+   PYTHONPATH=src python scripts/seed_ops.py
+   ```
 
-The ADMIN role grants access to user creation, role assignment, and monitoring source registration.
+2. Or create an account via the signup endpoint and then promote it to ADMIN in your Supabase database.
+
+The ADMIN role grants access to user creation, role assignment, and monitoring source registration. Admin authorization is enforced server-side. The frontend hides admin UI from non-admin users as a convenience, but the API refuses unauthorized requests regardless.
+
+---
+
+## Model Checkpoint Setup
+
+The trained SegFormer checkpoint is not included in the Git repository (it is 15 MB and `.gitignore`'d). You must obtain it before inference will work.
+
+**Option A: Copy from a trained environment**
+
+```bash
+mkdir -p checkpoints/best
+# Copy model.safetensors and config.json into checkpoints/best/
+```
+
+**Option B: Train from the composite dataset**
+
+```bash
+PYTHONPATH=src python -m drainwatch.cli train
+```
+
+The checkpoint directory must contain `config.json` and `model.safetensors`. The application validates the checkpoint at startup and refuses to serve predictions from an untrained or incompatible model.
+
+---
+
+## Security Considerations
+
+- **Secrets**: Environment variables (`SUPABASE_KEY`, AWS credentials) must never be committed to the repository. Use `.env` locally (which is `.gitignore`'d) and AWS Secrets Manager for ECS deployments.
+- **Passwords**: Hashed with PBKDF2-HMAC-SHA256 (240,000 iterations, per-user random salt). Password material is never returned in API responses.
+- **Sessions**: Token stored as SHA-256 hash server-side. HTTP-only, SameSite=Lax cookies. Set `DRAINWATCH_COOKIE_SECURE=1` in production.
+- **HTTPS**: The application itself serves plain HTTP. TLS must be terminated by a load balancer (ALB) or reverse proxy in production.
+- **Image storage**: Use private S3 buckets with presigned URLs for sensitive imagery. The `DRAINWATCH_MEDIA_BASE` environment variable controls whether images are served via presigned URLs (omit the variable) or direct public URLs (set the variable).
+- **CORS**: Restricted to specific development origins. No wildcard origins.
+
+---
+
+## Evaluation Results and Limitations
+
+The model was trained for 12 epochs on a composite dataset of 3,323 training samples and 586 validation samples.
+
+| Metric | Value | Note |
+|--------|-------|------|
+| Best epoch | 12 | |
+| Selection score (mean water+waste IoU) | 0.693 | Used for checkpoint selection |
+| Validation mIoU | 0.770 | Includes easy structure class |
+| Structure IoU | 0.925 | |
+| Water IoU | 0.715 | |
+| Waste IoU | 0.671 | |
+
+**Limitations:**
+
+- These are **validation set metrics**, not independent test-set results. No held-out test set has been evaluated.
+- The composite dataset combines ADE20K water classes, COCO debris masks, and custom Delhi drain images. Cross-domain generalization to unseen camera types, lighting conditions, or geographies has not been measured.
+- Multiple frames from the same recording location may appear in both training and validation splits. Frame-level leakage has not been formally audited.
+- The Choke Index is a pixel-ratio metric and does not measure volumetric flow.
+
+---
+
+## Known Limitations
+
+- **No continuous CCTV ingestion**: The system currently accepts manually submitted frames. A camera-source ingestion service that captures frames on a schedule is planned but not yet implemented.
+- **No independent test-set evaluation**: Reported metrics are from the validation split used during training.
+- **Single-container deployment**: The current architecture runs the API, model, and frontend in one container. This is suitable for the current scale but would need separation for high availability.
+- **No HTTPS termination**: TLS must be provided by an external load balancer.
+- **No email transport**: Password reset and access requests are recorded but not emailed.

@@ -1,13 +1,13 @@
 """FastAPI service: analyze an image, serve the dashboard.
 
 One container serves both the API and the built React app, so there is a single deploy
-target on App Runner instead of two.
+target on ECS Fargate instead of two.
 
-**The model is loaded best-effort at startup and a failure is not fatal.** The plan's
-hard gate is a working deployed URL by Oct 7 regardless of model quality; a container
-that refuses to boot because a checkpoint is missing would turn a model problem into a
-deploy problem on the worst possible day. ``/health`` reports ``model_loaded`` so the
-state is visible rather than silent.
+**The model requires a trained checkpoint to serve predictions.** A missing or invalid
+checkpoint does not crash the container — it boots, serves ``/health``, and reports the
+error — but ``/analyze`` returns 503 rather than producing predictions from an untrained
+segmentation head. ``/health`` reports ``model_loaded``, ``model_trained``, and
+``checkpoint`` so the operational state is unambiguous.
 """
 
 from __future__ import annotations
@@ -51,24 +51,74 @@ WEB_DIST = PROJECT_ROOT / "web" / "dist"
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
 # Populated in the lifespan handler.
-STATE: dict = {"model": None, "device": "none", "storage": None, "error": None}
+STATE: dict = {"model": None, "device": "none", "storage": None, "error": None, "model_trained": False, "checkpoint": "none"}
 
 
 def _load_model_quietly() -> None:
-    """Load the checkpoint if one exists, recording failure instead of raising."""
+    """Load the trained checkpoint. Refuse to silently serve an untrained head.
+
+    A missing checkpoint means the model is not ready for inference — STATE['model']
+    stays None and ``/analyze`` returns 503. The health endpoint reports the distinction
+    so operators can see exactly what happened.
+
+    The pretrained base with a freshly initialised 3-class head is **never** loaded for
+    production inference: its predictions are meaningless for drainage blockage scoring,
+    and presenting them as valid readings would be dishonest. If you need the base model
+    for training or development, use ``load_model()`` directly with no checkpoint arg.
+    """
     try:
         from drainwatch.model.segformer import load_model, pick_device
 
         checkpoint = Path(os.environ.get("DRAINWATCH_CHECKPOINT", CHECKPOINT_DIR / "best"))
         device = pick_device(os.environ.get("DRAINWATCH_DEVICE"))
-        # No checkpoint yet: fall back to the pretrained base so the pipeline is still
-        # exercisable end-to-end. Predictions will be poor — that is honest and visible.
-        STATE["model"] = load_model(checkpoint if checkpoint.exists() else None)
+
+        if not checkpoint.exists():
+            STATE["error"] = (
+                f"trained checkpoint not found at {checkpoint}. "
+                "The model cannot serve predictions without a trained checkpoint. "
+                "See README for checkpoint setup instructions."
+            )
+            STATE["checkpoint"] = "missing"
+            print(f"model load skipped: {STATE['error']}")
+            return
+
+        # Validate that the checkpoint contains the expected model configuration.
+        config_path = checkpoint / "config.json"
+        if not config_path.exists():
+            STATE["error"] = (
+                f"checkpoint directory {checkpoint} exists but has no config.json. "
+                "This may be a corrupted or incomplete checkpoint."
+            )
+            STATE["checkpoint"] = "invalid"
+            print(f"model load failed: {STATE['error']}")
+            return
+
+        # Validate checkpoint compatibility: num_labels must match our class count.
+        import json as _json
+        try:
+            ckpt_config = _json.loads(config_path.read_text())
+            ckpt_num_labels = ckpt_config.get("num_labels", ckpt_config.get("num_classes"))
+            from drainwatch.config import NUM_CLASSES
+            if ckpt_num_labels is not None and int(ckpt_num_labels) != NUM_CLASSES:
+                STATE["error"] = (
+                    f"checkpoint has {ckpt_num_labels} classes but the application "
+                    f"expects {NUM_CLASSES}. The checkpoint is incompatible."
+                )
+                STATE["checkpoint"] = "incompatible"
+                print(f"model load failed: {STATE['error']}")
+                return
+        except Exception as exc:
+            print(f"warning: could not validate checkpoint config: {exc}")
+
+        STATE["model"] = load_model(checkpoint)
         STATE["device"] = str(device)
-        STATE["checkpoint"] = str(checkpoint) if checkpoint.exists() else "base (untrained head)"
+        STATE["checkpoint"] = str(checkpoint)
+        STATE["model_trained"] = True
     except Exception as exc:  # noqa: BLE001 - deliberate: boot without a model
         STATE["error"] = f"{type(exc).__name__}: {exc}"
+        STATE["checkpoint"] = "error"
         print(f"model load failed, serving without inference: {STATE['error']}")
+
 
 
 @asynccontextmanager
@@ -143,6 +193,8 @@ def health() -> HealthResponse:
     return HealthResponse(
         status="ok",
         model_loaded=STATE["model"] is not None,
+        model_trained=STATE.get("model_trained", False),
+        checkpoint=STATE.get("checkpoint", "none"),
         device=STATE["device"],
         storage=getattr(storage, "name", "none"),
         thresholds=asdict(DEFAULT_THRESHOLDS),
