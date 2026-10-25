@@ -48,10 +48,10 @@ def _model():
     """
     from drainwatch.api.main import STATE
 
-    if STATE.get("model") is None:
+    if STATE.get("model") is None or not STATE.get("model_trained", False):
         raise HTTPException(
             status_code=503,
-            detail=STATE.get("error") or "The analysis service is not available.",
+            detail=STATE.get("error") or "The analysis model has not loaded a trained checkpoint.",
         )
     return STATE["model"]
 

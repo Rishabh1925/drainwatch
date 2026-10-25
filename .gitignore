@@ -28,7 +28,9 @@ frontend/dist/
 data/local_store/
 data/
 
-# Model checkpoints (binary files, not tracked)
-checkpoints/**
+# Model checkpoints (binary model files not tracked; directory structure is)
+checkpoints/*
+!checkpoints/best/
+checkpoints/best/*
 !checkpoints/best/.gitkeep
 !checkpoints/training_report.json
