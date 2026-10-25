@@ -112,9 +112,45 @@ aws ecs describe-clusters --clusters ${CLUSTER_NAME} --region ${REGION} \
 # ─── Step 7: Register Task Definition ──────────────────────────
 echo ""
 echo "▶ Step 7: Task Definition"
-# Replace placeholders in the task def
+
+# Resolve complete Secrets Manager ARNs (including the random suffix).
+# ECS requires the full ARN, not the friendly name.
+SUPABASE_KEY_ARN=$(aws secretsmanager describe-secret \
+  --secret-id drainwatch/supabase-key \
+  --region ${REGION} --query 'ARN' --output text 2>/dev/null) || {
+  echo "  ✗ Secret 'drainwatch/supabase-key' not found in Secrets Manager."
+  echo "    Create it: aws secretsmanager create-secret --name drainwatch/supabase-key --secret-string YOUR_KEY --region ${REGION}"
+  exit 1
+}
+SUPABASE_URL_ARN=$(aws secretsmanager describe-secret \
+  --secret-id drainwatch/supabase-url \
+  --region ${REGION} --query 'ARN' --output text 2>/dev/null) || {
+  echo "  ✗ Secret 'drainwatch/supabase-url' not found in Secrets Manager."
+  echo "    Create it: aws secretsmanager create-secret --name drainwatch/supabase-url --secret-string YOUR_URL --region ${REGION}"
+  exit 1
+}
+echo "  ✓ Resolved secret ARNs"
+
+# Grant the execution role permission to retrieve these secrets.
+SECRETS_POLICY='{
+  "Version":"2012-10-17",
+  "Statement":[{
+    "Effect":"Allow",
+    "Action":["secretsmanager:GetSecretValue"],
+    "Resource":["'"${SUPABASE_KEY_ARN}"'","'"${SUPABASE_URL_ARN}"'"]
+  }]
+}'
+aws iam put-role-policy \
+  --role-name ecsTaskExecutionRole \
+  --policy-name drainwatch-secrets-access \
+  --policy-document "${SECRETS_POLICY}" 2>/dev/null
+echo "  ✓ Execution role granted secretsmanager:GetSecretValue"
+
+# Replace placeholders in the task definition template.
 TASK_DEF=$(cat docker/ecs-task-definition.json | \
-  sed "s|ACCOUNT_ID|${ACCOUNT_ID}|g")
+  sed "s|ACCOUNT_ID|${ACCOUNT_ID}|g" | \
+  sed "s|arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:drainwatch/supabase-key|${SUPABASE_KEY_ARN}|g" | \
+  sed "s|arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:drainwatch/supabase-url|${SUPABASE_URL_ARN}|g")
 echo "${TASK_DEF}" | aws ecs register-task-definition \
   --cli-input-json file:///dev/stdin \
   --region ${REGION} --output text --query 'taskDefinition.taskDefinitionArn'

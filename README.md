@@ -1,8 +1,8 @@
 # DrainWatch
 
-AI-powered urban drainage monitoring system. DrainWatch ingests drone and CCTV camera frames, runs transformer-based semantic segmentation to differentiate water flow from solid waste occlusion, computes a per-drain Choke Index, and automatically surfaces critical blockages to a real-time municipal operations dashboard. When the Choke Index for a drain crosses 70%, the system generates a prioritised dispatch queue so field crews can be routed before a choke-point overflows.
+AI-powered urban drainage monitoring system. DrainWatch accepts manually submitted drain images, runs transformer-based semantic segmentation to classify water flow versus solid waste occlusion, computes a per-drain Choke Index, and surfaces critical blockages to a real-time municipal operations dashboard. When the Choke Index for a drain reaches 70% or above, the system generates a prioritised dispatch queue so field crews can be routed before a choke-point overflows. Continuous camera-source ingestion (CCTV and drone feeds on a schedule) is planned but not yet implemented.
 
-This repository contains the full production stack: the Python inference backend, the trained SegFormer checkpoint, the React operations dashboard, and the AWS infrastructure configuration used to run it on ECS Fargate.
+This repository contains the full stack: the Python inference backend, the React operations dashboard, the composite training pipeline, and the AWS ECS Fargate deployment configuration. The trained SegFormer checkpoint is not included in the repository (it is 15 MB); see [Model Checkpoint Setup](#model-checkpoint-setup) for how to obtain it.
 
 ---
 
@@ -208,8 +208,8 @@ Three alert bands are defined:
 | Band | Threshold | Meaning |
 |------|-----------|---------|
 | Clear | Below 40% | No action required |
-| Watch | 40% to 70% | Schedule inspection |
-| Critical | Above 70% | Dispatch crew immediately |
+| Watch | 40% to below 70% | Schedule inspection |
+| Critical | 70% or above | Dispatch crew immediately |
 
 **Segmentation Overlay**
 
