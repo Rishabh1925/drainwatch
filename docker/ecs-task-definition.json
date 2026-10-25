@@ -34,10 +34,6 @@
         {
           "name": "PORT",
           "value": "8080"
-        },
-        {
-          "name": "DRAINWATCH_COOKIE_SECURE",
-          "value": "1"
         }
       ],
       "secrets": [

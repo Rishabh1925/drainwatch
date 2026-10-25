@@ -552,8 +552,8 @@ The checkpoint directory must contain `config.json` and `model.safetensors`. The
 
 - **Secrets**: Environment variables (`SUPABASE_KEY`, AWS credentials) must never be committed to the repository. Use `.env` locally (which is `.gitignore`'d) and AWS Secrets Manager for ECS deployments.
 - **Passwords**: Hashed with PBKDF2-HMAC-SHA256 (240,000 iterations, per-user random salt). Password material is never returned in API responses.
-- **Sessions**: Token stored as SHA-256 hash server-side. HTTP-only, SameSite=Lax cookies. Set `DRAINWATCH_COOKIE_SECURE=1` in production.
-- **HTTPS**: The application itself serves plain HTTP. TLS must be terminated by a load balancer (ALB) or reverse proxy in production.
+- **Sessions**: Token stored as SHA-256 hash server-side. HTTP-only, SameSite=Lax cookies. The `DRAINWATCH_COOKIE_SECURE` variable adds the `Secure` flag, which tells browsers to only send the cookie over HTTPS. **Do not enable it without HTTPS termination** or login will silently break (the browser will refuse to send the session cookie over plain HTTP).
+- **HTTPS**: The application serves plain HTTP. TLS must be terminated by a load balancer (ALB) or reverse proxy in front of the container. Once HTTPS is in place, set `DRAINWATCH_COOKIE_SECURE=1` in the ECS task definition. Without HTTPS, do not set this variable.
 - **Image storage**: Use private S3 buckets with presigned URLs for sensitive imagery. The `DRAINWATCH_MEDIA_BASE` environment variable controls whether images are served via presigned URLs (omit the variable) or direct public URLs (set the variable).
 - **CORS**: Restricted to specific development origins. No wildcard origins.
 
