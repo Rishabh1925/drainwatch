@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export AWS_PAGER=""
 
 # ─── Configuration ───────────────────────────────────────────────
 REGION="ap-southeast-2"
