@@ -148,14 +148,18 @@ aws iam put-role-policy \
 echo "  ✓ Execution role granted secretsmanager:GetSecretValue"
 
 # Replace placeholders in the task definition template.
-TASK_DEF=$(cat docker/ecs-task-definition.json | \
+TASK_DEF_FILE=$(mktemp /tmp/drainwatch-taskdef.XXXXXX.json)
+cat docker/ecs-task-definition.json | \
   sed "s|ACCOUNT_ID|${ACCOUNT_ID}|g" | \
   sed "s|arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:drainwatch/supabase-key|${SUPABASE_KEY_ARN}|g" | \
-  sed "s|arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:drainwatch/supabase-url|${SUPABASE_URL_ARN}|g")
-echo "${TASK_DEF}" | aws ecs register-task-definition \
-  --cli-input-json file:///dev/stdin \
+  sed "s|arn:aws:secretsmanager:${REGION}:${ACCOUNT_ID}:secret:drainwatch/supabase-url|${SUPABASE_URL_ARN}|g" \
+  > "${TASK_DEF_FILE}"
+aws ecs register-task-definition \
+  --cli-input-json "file://${TASK_DEF_FILE}" \
   --region ${REGION} --output text --query 'taskDefinition.taskDefinitionArn'
+rm -f "${TASK_DEF_FILE}"
 echo "  ✓ Task definition registered"
+
 
 # ─── Step 8: Create/Update Service ──────────────────────────────
 echo ""
